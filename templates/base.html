@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cricket League Management{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if league %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>🏏 {{ league.name }}</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Dashboard</a></li>
+                <li><a href="/fixtures" class="nav-link">Fixtures</a></li>
+                <li><a href="/enter-result" class="nav-link">Enter Result</a></li>
+                <li><a href="/points-table" class="nav-link">Points Table</a></li>
+                <li class="dropdown">
+                    <button class="nav-link dropdown-btn">More ▼</button>
+                    <div class="dropdown-content">
+                        <a href="/api/export-excel">📊 Export to Excel</a>
+                        <a href="/api/export-pdf">📄 Export to PDF</a>
+                        <button onclick="resetTournament()" class="btn-reset">🔄 Reset Tournament</button>
+                    </div>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                        <button class="alert-close" onclick="this.parentElement.style.display='none';">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Cricket League Management System | Developed with Python Flask</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

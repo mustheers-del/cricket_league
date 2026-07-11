@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}Points Table - {{ league.name }}{% endblock %}
+
+{% block content %}
+<div class="points-table-container">
+    <div class="page-header">
+        <h2>Points Table</h2>
+        <p class="subtitle">{{ league.name }} - Current Standings</p>
+    </div>
+
+    <!-- Table Legend -->
+    <div class="table-legend">
+        <div class="legend-item">
+            <span class="legend-label">M</span> = Matches Played
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">W</span> = Wins
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">L</span> = Losses
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">Pts</span> = Points (2 per win)
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">RF</span> = Runs For
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">RA</span> = Runs Against
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">OF</span> = Overs Faced
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">OB</span> = Overs Bowled
+        </div>
+        <div class="legend-item">
+            <span class="legend-label">NRR</span> = Net Run Rate
+        </div>
+    </div>
+
+    <!-- Main Points Table -->
+    {% if points_table %}
+    <div class="table-responsive">
+        <table class="points-table full-width">
+            <thead>
+                <tr class="header-row">
+                    <th class="rank-col">Rank</th>
+                    <th class="team-col">Team</th>
+                    <th class="stat-col">M</th>
+                    <th class="stat-col">W</th>
+                    <th class="stat-col">L</th>
+                    <th class="points-col">Pts</th>
+                    <th class="stat-col">RF</th>
+                    <th class="stat-col">RA</th>
+                    <th class="stat-col">OF</th>
+                    <th class="stat-col">OB</th>
+                    <th class="nrr-col">NRR</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in points_table %}
+                <tr class="data-row rank-{{ team['rank'] }}">
+                    <td class="rank">{{ team['rank'] }}</td>
+                    <td class="team-name">{{ team['team_name'] }}</td>
+                    <td>{{ team['matches'] }}</td>
+                    <td class="wins">{{ team['wins'] }}</td>
+                    <td>{{ team['losses'] }}</td>
+                    <td class="points">{{ team['points'] }}</td>
+                    <td>{{ team['runs_for'] }}</td>
+                    <td>{{ team['runs_against'] }}</td>
+                    <td>{{ team['overs_faced'] }}</td>
+                    <td>{{ team['overs_bowled'] }}</td>
+                    <td class="nrr {% if team['nrr'] > 0 %}positive{% elif team['nrr'] < 0 %}negative{% endif %}">
+                        {{ team['nrr'] }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Export Options -->
+    <div class="export-section">
+        <h3>Export Points Table</h3>
+        <div class="export-buttons">
+            <a href="/api/export-excel" class="btn-export btn-excel">
+                📊 Download Excel (.xlsx)
+            </a>
+            <a href="/api/export-pdf" class="btn-export btn-pdf">
+                📄 Download PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="stats-section">
+        <h3>Tournament Statistics</h3>
+        <div class="stats-grid">
+            {% if points_table %}
+                <div class="stat-card">
+                    <h4>Top Scorer (Runs For)</h4>
+                    {% set top_scorer = points_table|sort(attribute='runs_for', reverse=True)|first %}
+                    <p class="stat-value">{{ top_scorer['team_name'] }}</p>
+                    <p class="stat-detail">{{ top_scorer['runs_for'] }} runs</p>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Best Defense (Runs Against)</h4>
+                    {% set best_defense = points_table|sort(attribute='runs_against')|first %}
+                    <p class="stat-value">{{ best_defense['team_name'] }}</p>
+                    <p class="stat-detail">{{ best_defense['runs_against'] }} runs conceded</p>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Best NRR</h4>
+                    {% set best_nrr = points_table|sort(attribute='nrr', reverse=True)|first %}
+                    <p class="stat-value">{{ best_nrr['team_name'] }}</p>
+                    <p class="stat-detail">NRR: {{ best_nrr['nrr'] }}</p>
+                </div>
+
+                <div class="stat-card">
+                    <h4>Most Wins</h4>
+                    {% set most_wins = points_table|sort(attribute='wins', reverse=True)|first %}
+                    <p class="stat-value">{{ most_wins['team_name'] }}</p>
+                    <p class="stat-detail">{{ most_wins['wins'] }} wins</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <h3>📊 No data available yet</h3>
+        <p>Enter match results to see the points table and statistics.</p>
+        <a href="/enter-result" class="btn-primary">Enter First Match Result</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .points-table-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .table-legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 30px 0;
+        padding: 20px;
+        background: #f0f4f8;
+        border-radius: 8px;
+    }
+
+    .legend-item {
+        font-size: 13px;
+    }
+
+    .legend-label {
+        display: inline-block;
+        background: #0066cc;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-weight: bold;
+        font-size: 11px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        margin: 30px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .points-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .points-table.full-width {
+        width: 100%;
+    }
+
+    .header-row {
+        background: linear-gradient(135deg, #0066cc, #004a99);
+        color: white;
+    }
+
+    .header-row th {
+        padding: 15px 10px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 13px;
+        border-bottom: 2px solid #004a99;
+    }
+
+    .rank-col {
+        min-width: 50px;
+    }
+
+    .team-col {
+        min-width: 150px;
+        text-align: left;
+    }
+
+    .stat-col {
+        min-width: 45px;
+    }
+
+    .points-col {
+        min-width: 50px;
+        font-weight: bold;
+    }
+
+    .nrr-col {
+        min-width: 60px;
+    }
+
+    .data-row {
+        border-bottom: 1px solid #e0e0e0;
+        transition: background-color 0.3s;
+    }
+
+    .data-row:hover {
+        background-color: #f5f9ff;
+    }
+
+    .data-row td {
+        padding: 12px 10px;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .data-row .rank {
+        font-weight: bold;
+        font-size: 15px;
+    }
+
+    .data-row .team-name {
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .data-row .points {
+        font-weight: bold;
+        color: #0066cc;
+    }
+
+    .data-row .nrr {
+        font-weight: 600;
+    }
+
+    .data-row .nrr.positive {
+        color: #27ae60;
+    }
+
+    .data-row .nrr.negative {
+        color: #e74c3c;
+    }
+
+    .rank-1 {
+        background-color: #fffacd;
+    }
+
+    .rank-1 .rank::before {
+        content: "🥇 ";
+    }
+
+    .rank-2 {
+        background-color: #f0f0f0;
+    }
+
+    .rank-2 .rank::before {
+        content: "🥈 ";
+    }
+
+    .rank-3 {
+        background-color: #ffe4b5;
+    }
+
+    .rank-3 .rank::before {
+        content: "🥉 ";
+    }
+
+    .export-section {
+        margin: 40px 0;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .export-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .btn-export {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .btn-excel {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .btn-excel:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+    }
+
+    .btn-pdf {
+        background: #f44336;
+        color: white;
+    }
+
+    .btn-pdf:hover {
+        background: #da190b;
+        transform: translateY(-2px);
+    }
+
+    .stats-section {
+        margin-top: 50px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card h4 {
+        color: #666;
+        margin: 0 0 10px 0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: bold;
+        color: #0066cc;
+        margin: 10px 0;
+    }
+
+    .stat-detail {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .table-legend {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .header-row th,
+        .data-row td {
+            padding: 10px 5px;
+            font-size: 12px;
+        }
+
+        .rank-col {
+            min-width: 40px;
+        }
+
+        .team-col {
+            min-width: 120px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

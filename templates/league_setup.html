@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Create League - Cricket League Management{% endblock %}
+
+{% block content %}
+<div class="setup-container">
+    <div class="setup-card">
+        <h1 class="setup-title">🏏 Create Your Cricket League</h1>
+        <p class="setup-subtitle">Set up a new league with 5 teams and generate fixtures automatically</p>
+
+        <form id="leagueForm" class="setup-form">
+            <div class="form-group">
+                <label for="leagueName">League Name *</label>
+                <input 
+                    type="text" 
+                    id="leagueName" 
+                    name="league_name" 
+                    placeholder="e.g., Premier Cricket League 2024"
+                    required
+                    class="form-control"
+                >
+                <span class="error-message" id="leagueNameError"></span>
+            </div>
+
+            <div class="teams-section">
+                <h3>Add 5 Teams</h3>
+                <p class="teams-subtitle">Enter unique team names</p>
+
+                <div id="teamsContainer"></div>
+
+                <button type="button" class="btn-secondary" onclick="addTeamField()">
+                    + Add Team
+                </button>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary btn-large">
+                    Create League & Generate Fixtures
+                </button>
+            </div>
+        </form>
+
+        <div class="setup-info">
+            <h3>📋 What Happens Next?</h3>
+            <ul>
+                <li>✅ Your league is created with all 5 teams</li>
+                <li>✅ Round-robin fixtures are automatically generated</li>
+                <li>✅ Each team plays every other team exactly once</li>
+                <li>✅ Total of 10 fixtures (4C2 = 6... wait, 5C2 = 10)</li>
+                <li>✅ Enter match results to track stats and standings</li>
+                <li>✅ View live points table with NRR calculations</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize team fields
+    function initializeTeamFields() {
+        const container = document.getElementById('teamsContainer');
+        container.innerHTML = '';
+        
+        for (let i = 0; i < 5; i++) {
+            addTeamField();
+        }
+    }
+
+    // Add team input field
+    function addTeamField() {
+        const container = document.getElementById('teamsContainer');
+        const teamCount = container.children.length;
+        
+        if (teamCount >= 5) {
+            alert('You can only add 5 teams');
+            return;
+        }
+
+        const teamDiv = document.createElement('div');
+        teamDiv.className = 'form-group team-input-group';
+        teamDiv.innerHTML = `
+            <label>Team ${teamCount + 1} *</label>
+            <div class="team-input-wrapper">
+                <input 
+                    type="text" 
+                    name="team_${teamCount + 1}" 
+                    placeholder="Enter team name"
+                    class="form-control team-input"
+                    required
+                >
+                <button type="button" class="btn-remove" onclick="this.parentElement.parentElement.remove()">
+                    ✕
+                </button>
+            </div>
+            <span class="error-message" id="team${teamCount + 1}Error"></span>
+        `;
+        
+        container.appendChild(teamDiv);
+    }
+
+    // Form submission
+    document.getElementById('leagueForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const leagueName = document.getElementById('leagueName').value.trim();
+        const teamInputs = document.querySelectorAll('.team-input');
+        const teams = Array.from(teamInputs).map(input => input.value.trim());
+
+        // Validation
+        let isValid = true;
+
+        if (!leagueName) {
+            document.getElementById('leagueNameError').textContent = 'League name is required';
+            isValid = false;
+        } else {
+            document.getElementById('leagueNameError').textContent = '';
+        }
+
+        if (teams.length !== 5) {
+            alert('Please enter exactly 5 teams');
+            isValid = false;
+        }
+
+        const uniqueTeams = new Set(teams);
+        if (uniqueTeams.size !== teams.length) {
+            alert('Team names must be unique');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        // Submit to server
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating League...';
+
+        try {
+            const response = await fetch('/api/create-league', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    league_name: leagueName,
+                    teams: teams
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification('success', 'League created successfully! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            } else {
+                showNotification('error', data.error || 'Failed to create league');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create League & Generate Fixtures';
+            }
+        } catch (error) {
+            showNotification('error', 'Error: ' + error.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create League & Generate Fixtures';
+        }
+    });
+
+    // Show notification
+    function showNotification(type, message) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            ${message}
+            <button class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+        `;
+        document.querySelector('.main-content').insertBefore(alert, document.querySelector('.setup-container'));
+    }
+
+    // Initialize on page load
+    initializeTeamFields();
+</script>
+{% endblock %}

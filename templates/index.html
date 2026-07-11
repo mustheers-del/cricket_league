@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ league.name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2>League Dashboard</h2>
+        <p class="subtitle">{{ league.name }} - Season Overview</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <h4>Total Teams</h4>
+                <p class="stat-value">{{ teams|length }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h4>Total Fixtures</h4>
+                <p class="stat-value">{{ points_table[0]['matches'] * teams|length // 2 if points_table else 0 }}</p>
+            </div>
+        </div>
+
+        {% if points_table %}
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-content">
+                    <h4>Leader</h4>
+                    <p class="stat-value">{{ points_table[0]['team_name'] }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h4>Matches Played</h4>
+                    <p class="stat-value">{% set total = 0 %}{% for team in points_table %}{% if loop.first %}{{ team['matches'] * teams|length // 2 }}{% endif %}{% endfor %}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+        <a href="/fixtures" class="quick-link-btn">
+            <span class="icon">📋</span>
+            <span>View Fixtures</span>
+        </a>
+        <a href="/enter-result" class="quick-link-btn">
+            <span class="icon">✏️</span>
+            <span>Enter Result</span>
+        </a>
+        <a href="/points-table" class="quick-link-btn">
+            <span class="icon">📊</span>
+            <span>Points Table</span>
+        </a>
+    </div>
+
+    <!-- Points Table Preview -->
+    {% if points_table %}
+    <div class="table-section">
+        <h3>Current Standings</h3>
+        <div class="table-responsive">
+            <table class="points-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Team</th>
+                        <th>M</th>
+                        <th>W</th>
+                        <th>L</th>
+                        <th>Pts</th>
+                        <th>RF</th>
+                        <th>RA</th>
+                        <th>NRR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team in points_table %}
+                    <tr class="rank-{{ team['rank'] }}">
+                        <td class="rank">{{ team['rank'] }}</td>
+                        <td class="team-name">{{ team['team_name'] }}</td>
+                        <td>{{ team['matches'] }}</td>
+                        <td>{{ team['wins'] }}</td>
+                        <td>{{ team['losses'] }}</td>
+                        <td class="points">{{ team['points'] }}</td>
+                        <td>{{ team['runs_for'] }}</td>
+                        <td>{{ team['runs_against'] }}</td>
+                        <td class="nrr">{{ team['nrr'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="table-note">M: Matches | W: Wins | L: Losses | Pts: Points | RF: Runs For | RA: Runs Against | NRR: Net Run Rate</p>
+    </div>
+    {% else %}
+    <div class="info-box">
+        <h3>🎯 Get Started</h3>
+        <p>No matches have been played yet. Start by entering match results to see standings!</p>
+        <a href="/enter-result" class="btn-primary">Enter First Match Result</a>
+    </div>
+    {% endif %}
+
+    <!-- Recent Matches -->
+    <div class="recent-section">
+        <h3>Recent Matches</h3>
+        {% set recent_fixtures = [] %}
+        {% for fixture in fixtures if fixture['result_id'] %}
+            {% if recent_fixtures|length < 5 %}
+                {% set _ = recent_fixtures.append(fixture) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if recent_fixtures %}
+            <div class="match-cards">
+                {% for fixture in recent_fixtures[::-1] %}
+                <div class="match-card">
+                    <div class="match-teams">
+                        <div class="team">{{ fixture['team1_name'] }}</div>
+                        <div class="score">
+                            {{ fixture['team1_runs'] }}/{{ fixture['team1_wickets'] }}
+                        </div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="match-teams">
+                        <div class="score">
+                            {{ fixture['team2_runs'] }}/{{ fixture['team2_wickets'] }}
+                        </div>
+                        <div class="team">{{ fixture['team2_name'] }}</div>
+                    </div>
+                    <div class="match-result">
+                        {% if fixture['team1_runs'] > fixture['team2_runs'] %}
+                            <strong>{{ fixture['team1_name'] }} Won</strong>
+                        {% elif fixture['team2_runs'] > fixture['team1_runs'] %}
+                            <strong>{{ fixture['team2_name'] }} Won</strong>
+                        {% else %}
+                            <strong>Tie</strong>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-data">No matches played yet</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .match-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .match-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+    }
+
+    .match-teams {
+        margin: 10px 0;
+    }
+
+    .match-card .team {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .match-card .score {
+        font-size: 1.3em;
+        color: #0066cc;
+        font-weight: bold;
+    }
+
+    .match-card .vs {
+        color: #999;
+        margin: 5px 0;
+    }
+
+    .match-result {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+        color: #27ae60;
+    }
+</style>
+{% endblock %}

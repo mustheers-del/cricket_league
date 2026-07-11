@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Fixtures - {{ league.name }}{% endblock %}
+
+{% block content %}
+<div class="fixtures-container">
+    <div class="page-header">
+        <h2>Fixtures</h2>
+        <p class="subtitle">Round-Robin Match Schedule</p>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <button class="filter-btn active" onclick="filterFixtures('all')">
+            All ({{ fixtures|length }})
+        </button>
+        <button class="filter-btn" onclick="filterFixtures('pending')">
+            Pending
+        </button>
+        <button class="filter-btn" onclick="filterFixtures('completed')">
+            Completed
+        </button>
+    </div>
+
+    <!-- Fixtures Grid -->
+    <div class="fixtures-grid">
+        {% for fixture in fixtures %}
+        <div class="fixture-card" data-status="{% if fixture['result_id'] %}completed{% else %}pending{% endif %}">
+            <div class="fixture-number">Match {{ loop.index }}</div>
+
+            <!-- Match Details -->
+            <div class="fixture-match">
+                <div class="team team1">
+                    <span class="team-name">{{ fixture['team1_name'] }}</span>
+                    {% if fixture['result_id'] %}
+                        <span class="score">
+                            {{ fixture['team1_runs'] }}/{{ fixture['team1_wickets'] }}
+                            <small>({{ fixture['team1_overs'] }} ov)</small>
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="vs-badge">VS</div>
+
+                <div class="team team2">
+                    {% if fixture['result_id'] %}
+                        <span class="score">
+                            {{ fixture['team2_runs'] }}/{{ fixture['team2_wickets'] }}
+                            <small>({{ fixture['team2_overs'] }} ov)</small>
+                        </span>
+                    {% endif %}
+                    <span class="team-name">{{ fixture['team2_name'] }}</span>
+                </div>
+            </div>
+
+            <!-- Result Badge -->
+            {% if fixture['result_id'] %}
+                <div class="result-badge">
+                    {% if fixture['team1_runs'] > fixture['team2_runs'] %}
+                        <span class="winner">{{ fixture['team1_name'] }} Won</span>
+                        <span class="margin">by {{ fixture['team1_runs'] - fixture['team2_runs'] }} runs</span>
+                    {% elif fixture['team2_runs'] > fixture['team1_runs'] %}
+                        <span class="winner">{{ fixture['team2_name'] }} Won</span>
+                        <span class="margin">by {{ fixture['team2_runs'] - fixture['team1_runs'] }} runs</span>
+                    {% else %}
+                        <span class="tie">Match Tied</span>
+                    {% endif %}
+                </div>
+
+                <!-- Edit/Delete Options -->
+                <div class="fixture-actions">
+                    <a href="/edit-result/{{ fixture['result_id'] }}" class="btn-small btn-edit">
+                        ✎ Edit
+                    </a>
+                </div>
+            {% else %}
+                <div class="status-badge pending">Pending</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty State -->
+    {% if not fixtures %}
+    <div class="empty-state">
+        <h3>No fixtures generated yet</h3>
+        <p>Create a league to generate fixtures automatically</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function filterFixtures(status) {
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Filter cards
+        const cards = document.querySelectorAll('.fixture-card');
+        cards.forEach(card => {
+            if (status === 'all') {
+                card.style.display = 'block';
+            } else if (status === 'pending') {
+                card.style.display = card.dataset.status === 'pending' ? 'block' : 'none';
+            } else if (status === 'completed') {
+                card.style.display = card.dataset.status === 'completed' ? 'block' : 'none';
+            }
+        });
+    }
+</script>
+
+<style>
+    .fixtures-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        margin: 30px 0;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 10px 20px;
+        border: 2px solid #ddd;
+        background: white;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .filter-btn.active {
+        background: #0066cc;
+        color: white;
+        border-color: #0066cc;
+    }
+
+    .fixtures-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+    }
+
+    .fixture-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s;
+    }
+
+    .fixture-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .fixture-number {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 10px;
+    }
+
+    .fixture-match {
+        margin: 20px 0;
+    }
+
+    .team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 10px 0;
+    }
+
+    .team-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: #333;
+    }
+
+    .score {
+        font-size: 18px;
+        font-weight: bold;
+        color: #0066cc;
+        margin-top: 5px;
+    }
+
+    .score small {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .vs-badge {
+        text-align: center;
+        font-weight: 600;
+        color: #999;
+        margin: 10px 0;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        width: 100%;
+        text-align: center;
+        margin: 15px 0;
+    }
+
+    .status-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .result-badge {
+        text-align: center;
+        padding: 12px;
+        background: #f0f8ff;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+
+    .winner {
+        display: block;
+        font-weight: 600;
+        color: #27ae60;
+    }
+
+    .margin {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .tie {
+        display: block;
+        font-weight: 600;
+        color: #e74c3c;
+    }
+
+    .fixture-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .btn-small {
+        flex: 1;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-edit {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: #2980b9;
+    }
+
+    @media (max-width: 768px) {
+        .fixtures-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .fixture-card {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
